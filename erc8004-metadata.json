@@ -1,0 +1,52 @@
+{
+  "erc": "8004",
+  "version": "1.0.0",
+  "name": "ContractorFinder",
+  "description": "AI agent that finds licensed contractors with verified reviews",
+  "agent_type": "service",
+  "owner": "0xb3e17988e6eE4D31e6D07decf363f736461d9e08",
+  "created_at": "2026-02-06T00:00:00Z",
+  "capabilities": [
+    "contractor_search",
+    "license_verification",
+    "review_aggregation"
+  ],
+  "payment": {
+    "protocol": "x402",
+    "scheme": "exact",
+    "network": "base",
+    "asset": "USDC",
+    "amount": "0.10",
+    "receiver": "0xb3e17988e6eE4D31e6D07decf363f736461d9e08",
+    "facilitator": "https://facilitator.coinbase.com"
+  },
+  "endpoints": {
+    "api": "https://ca-contractor-finder-production.up.railway.app",
+    "health": "https://ca-contractor-finder-production.up.railway.app/health",
+    "payment_info": "https://ca-contractor-finder-production.up.railway.app/payment-info",
+    "mcp": "https://ca-contractor-finder-production.up.railway.app/mcp"
+  },
+  "protocols": [
+    "http",
+    "mcp",
+    "x402"
+  ],
+  "metadata": {
+    "category": "professional_services",
+    "tags": [
+      "contractors",
+      "construction",
+      "licenses",
+      "reviews"
+    ],
+    "pricing_model": "per_request",
+    "documentation": "https://github.com/yourname/contractor-finder-agent",
+    "terms_of_service": "https://yourdomain.com/tos",
+    "privacy_policy": "https://yourdomain.com/privacy"
+  },
+  "verification": {
+    "status": "self_attested",
+    "attestation": null,
+    "verified_by": null
+  }
+}
