@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: contractor-finder
+    name: bookkeeper-finder
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
@@ -13,9 +13,9 @@ services:
       - key: APIFY_API_TOKEN
         sync: false
       - key: BASE_WALLET_ADDRESS
-        value: 0xb3e17988e6eE4D31e6D07decf363f736461d9e08
+        value: 0x708AF34B155834B1e45B4B4b5933486a4e173C4e
       - key: AGENT_NAME
-        value: contractor-finder
+        value: bookkeeper-finder
       - key: AGENT_VERSION
         value: 1.0.0
       - key: X402_PRICE_USD
