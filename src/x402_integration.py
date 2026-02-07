@@ -21,7 +21,7 @@ WALLET_ADDRESS = os.getenv(
 )
 NETWORK = "eip155:8453"
 USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-AMOUNT = "100000"
+AMOUNT = "300000"  # $0.30 USDC (CEO Sprint pricing)
 MAX_TIMEOUT = 300
 
 PROTECTED_ROUTES = {"/api/search", "/find"}
@@ -129,7 +129,7 @@ async def root():
     return {
         "name": "BookkeeperFinder API",
         "version": "3.1.0",
-        "price": "$0.10 USDC per call",
+        "price": "$0.30 USDC per call",
         "network": f"Base Mainnet ({NETWORK})",
         "wallet": WALLET_ADDRESS,
         "x402": {"version": 2, "bazaar": True},
@@ -148,7 +148,7 @@ async def health_check():
         "agent": "bookkeeper-finder",
         "version": "3.1.0",
         "payment_required": True,
-        "price": "0.10 USDC",
+        "price": "0.30 USDC",
         "network": NETWORK,
     }
 
