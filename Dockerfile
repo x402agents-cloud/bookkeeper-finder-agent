@@ -15,4 +15,4 @@ COPY automation/ ./automation/
 EXPOSE 8000
 
 # Run the x402 integration server
-CMD ["python", "-m", "uvicorn", "src.x402_integration:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["sh", "-c", "python -m uvicorn src.x402_integration:app --host 0.0.0.0 --port ${PORT:-8000}"]
