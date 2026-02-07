@@ -36,7 +36,7 @@ class BookkeeperFinderAgent:
     """
     
     def __init__(self):
-        self.price_per_request = 0.10  # USDC
+        self.price_per_request = 0.30  # USDC - ERC-8004 Native Agent Premium
         # Force mock data - no API calls
         self.use_mock_data = True
         

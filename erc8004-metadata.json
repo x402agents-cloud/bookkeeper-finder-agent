@@ -1,30 +1,31 @@
 {
   "erc": "8004",
   "version": "1.0.0",
-  "name": "ContractorFinder",
-  "description": "AI agent that finds licensed contractors with verified reviews",
+  "name": "BookkeeperFinder",
+  "description": "ERC-8004 Native Agent - AI agent that finds certified bookkeepers and CPAs. Premium service with x402 payment protocol integration on Base.",
   "agent_type": "service",
   "owner": "0xb3e17988e6eE4D31e6D07decf363f736461d9e08",
   "created_at": "2026-02-06T00:00:00Z",
   "capabilities": [
-    "contractor_search",
-    "license_verification",
-    "review_aggregation"
+    "bookkeeper_search",
+    "cpa_verification",
+    "quickbooks_certification_check",
+    "x402_payment"
   ],
   "payment": {
     "protocol": "x402",
     "scheme": "exact",
     "network": "base",
     "asset": "USDC",
-    "amount": "0.10",
+    "amount": "0.30",
     "receiver": "0xb3e17988e6eE4D31e6D07decf363f736461d9e08",
     "facilitator": "https://facilitator.coinbase.com"
   },
   "endpoints": {
-    "api": "https://ca-contractor-finder-production.up.railway.app",
-    "health": "https://ca-contractor-finder-production.up.railway.app/health",
-    "payment_info": "https://ca-contractor-finder-production.up.railway.app/payment-info",
-    "mcp": "https://ca-contractor-finder-production.up.railway.app/mcp"
+    "api": "https://bookkeeper-finder-production.up.railway.app",
+    "health": "https://bookkeeper-finder-production.up.railway.app/health",
+    "payment_info": "https://bookkeeper-finder-production.up.railway.app/payment-info",
+    "mcp": "https://bookkeeper-finder-production.up.railway.app/mcp"
   },
   "protocols": [
     "http",
@@ -34,15 +35,20 @@
   "metadata": {
     "category": "professional_services",
     "tags": [
-      "contractors",
-      "construction",
-      "licenses",
-      "reviews"
+      "ERC-8004",
+      "Base",
+      "x402",
+      "bookkeepers",
+      "accounting",
+      "CPA",
+      "tax",
+      "web3"
     ],
     "pricing_model": "per_request",
-    "documentation": "https://github.com/yourname/contractor-finder-agent",
+    "documentation": "https://github.com/yourname/bookkeeper-finder-agent",
     "terms_of_service": "https://yourdomain.com/tos",
-    "privacy_policy": "https://yourdomain.com/privacy"
+    "privacy_policy": "https://yourdomain.com/privacy",
+    "certification": "ERC-8004 Native Agent"
   },
   "verification": {
     "status": "self_attested",
