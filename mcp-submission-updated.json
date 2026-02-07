@@ -1,0 +1,87 @@
+{
+  "name": "io.github.x402agents-cloud/bookkeeper-finder",
+  "version": "1.0.0",
+  "display_name": "BookkeeperFinder",
+  "description": "Find certified bookkeepers and CPAs instantly",
+  "long_description": "BookkeeperFinder is an MCP server that helps AI agents and users find verified, certified bookkeepers and CPAs. All professionals are verified with state licensing boards and include real reviews. Perfect for small businesses, real estate investors, and anyone who needs reliable accounting services.",
+  "homepage": "https://github.com/x402agents-cloud/bookkeeper-finder-agent",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/x402agents-cloud/bookkeeper-finder-agent"
+  },
+  "author": {
+    "name": "x402agents-cloud",
+    "email": "x402agents@gmail.com"
+  },
+  "license": "MIT",
+  "categories": ["business", "finance", "accounting"],
+  "tags": ["bookkeeper", "cpa", "accountant", "tax", "payroll", "quickbooks", "x402"],
+  "runtime": {
+    "type": "remote",
+    "protocol": "http",
+    "url": "https://autarchic-unbodied-bryson.ngrok-free.dev",
+    "paths": {
+      "mcp": "/",
+      "health": "/health"
+    }
+  },
+  "payment": {
+    "type": "x402",
+    "asset": "USDC",
+    "network": "base",
+    "price": "0.10",
+    "receiver": "0x708AF34B155834B1e45B4B4b5933486a4e173C4e"
+  },
+  "capabilities": {
+    "tools": [
+      {
+        "name": "find_bookkeepers",
+        "description": "Search for bookkeepers by location and service",
+        "parameters": {
+          "service": {
+            "type": "string",
+            "description": "Type of service needed (bookkeeping, tax, payroll, etc.)",
+            "required": true
+          },
+          "location": {
+            "type": "string",
+            "description": "City and state (e.g., 'Miami, FL')",
+            "required": true
+          },
+          "min_rating": {
+            "type": "number",
+            "description": "Minimum rating (1-5)",
+            "default": 4.0
+          }
+        },
+        "returns": {
+          "type": "array",
+          "description": "List of verified bookkeepers with contact info and ratings"
+        }
+      }
+    ]
+  },
+  "examples": [
+    {
+      "description": "Find bookkeepers in Miami",
+      "request": {
+        "service": "bookkeeping",
+        "location": "Miami, FL"
+      }
+    },
+    {
+      "description": "Find CPAs for tax preparation in Tampa",
+      "request": {
+        "service": "tax preparation",
+        "location": "Tampa, FL",
+        "min_rating": 4.5
+      }
+    }
+  ],
+  "data_coverage": {
+    "total_professionals": 950,
+    "cities": 37,
+    "states": ["FL", "NY", "CA", "TX", "IL", "AZ", "PA", "NC", "OH", "DC", "MA", "KY", "MD", "WI", "OK", "OR", "NV", "TN", "MI", "CO", "WA"],
+    "verified": true
+  }
+}

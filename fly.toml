@@ -1,16 +1,14 @@
-app = "contractor-finder"
+app = "bookkeeper-finder"
 primary_region = "iad"
 
 [build]
-  dockerfile = "Dockerfile"
+  builder = "paketobuildpacks/builder:base"
 
 [env]
   PORT = "8080"
-  AGENT_NAME = "contractor-finder"
+  AGENT_NAME = "bookkeeper-finder"
   AGENT_VERSION = "1.0.0"
-  X402_PRICE_USD = "0.10"
-  X402_ASSET = "USDC"
-  X402_NETWORK = "base"
+  BASE_WALLET_ADDRESS = "0x708AF34B155834B1e45B4B4b5933486a4e173C4e"
 
 [http_service]
   internal_port = 8080

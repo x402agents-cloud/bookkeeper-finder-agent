@@ -1,172 +1,162 @@
 """
-x402 Payment Integration for ContractorFinder
-Charges $0.10 USDC per API call
+BookkeeperFinder API - x402 v2 with Bazaar Discovery
 """
 
 import os
-import json
-from typing import Optional
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse
+import sys
+from typing import Any
+
+from fastapi import FastAPI, Request
 from pydantic import BaseModel
 
-# x402 Configuration
-X402_CONFIG = {
-    "price": "0.10",  # USDC
-    "asset": "USDC",
-    "network": "base",  # Base mainnet
-    "facilitator": "https://facilitator.coinbase.com"
+from x402.http import FacilitatorConfig, HTTPFacilitatorClient, PaymentOption
+from x402.http.middleware.fastapi import PaymentMiddlewareASGI
+from x402.http.types import RouteConfig
+from x402.mechanisms.evm.exact import ExactEvmServerScheme
+from x402.server import x402ResourceServer
+
+# --- Config ---
+WALLET_ADDRESS = os.getenv(
+    "BASE_WALLET_ADDRESS",
+    "0x708AF34B155834B1e45B4B4b5933486a4e173C4e",
+)
+FACILITATOR_URL = os.getenv("X402_FACILITATOR_URL", "https://x402.org/facilitator")
+
+# --- FastAPI App ---
+app = FastAPI(title="BookkeeperFinder API", version="2.0.0")
+
+# --- x402 Resource Server ---
+facilitator = HTTPFacilitatorClient(FacilitatorConfig(url=FACILITATOR_URL))
+server = x402ResourceServer(facilitator)
+server.register("eip155:8453", ExactEvmServerScheme())
+
+# --- Routes with Bazaar discovery metadata ---
+routes: dict[str, RouteConfig] = {
+    "POST /find": RouteConfig(
+        accepts=[
+            PaymentOption(
+                scheme="exact",
+                pay_to=WALLET_ADDRESS,
+                price="$0.10",
+                network="eip155:8453",
+            ),
+        ],
+        mime_type="application/json",
+        description="Find certified bookkeepers and CPAs. Verifies CPA licenses (California), QuickBooks certification.",
+        extensions={
+            "bazaar": {
+                "info": {
+                    "input": {
+                        "type": "json",
+                        "example": {
+                            "service": "bookkeeper",
+                            "location": "Los Angeles, CA",
+                            "min_rating": 4.0,
+                        },
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "service": {"type": "string", "description": "Service type (bookkeeper, CPA, tax preparer)"},
+                                "location": {"type": "string", "description": "City and state"},
+                                "min_rating": {"type": "number", "description": "Minimum rating 1-5", "default": 4.0},
+                            },
+                            "required": ["service", "location"],
+                        },
+                    },
+                    "output": {
+                        "type": "json",
+                        "example": {
+                            "query": {"service": "bookkeeper", "location": "Los Angeles, CA", "min_rating": 4.0},
+                            "results": [
+                                {
+                                    "name": "Elite Accounting",
+                                    "license_number": "CPA-45678",
+                                    "license_status": "ACTIVE",
+                                    "phone": "555-1234",
+                                    "rating": 4.8,
+                                    "review_count": 87,
+                                    "verified": True,
+                                    "quickbooks_certified": True,
+                                    "services": ["Bookkeeping", "Tax Preparation", "QuickBooks Certified"],
+                                }
+                            ],
+                            "count": 1,
+                            "price_charged": 0.10,
+                            "data_sources": ["Local Database", "CBA (CA)", "QuickBooks"],
+                        },
+                    },
+                },
+            },
+        },
+    ),
 }
 
-WALLET_ADDRESS = os.getenv("BASE_WALLET_ADDRESS", "0x708AF34B155834B1e45B4B4b5933486a4e173C4e")
+app.add_middleware(PaymentMiddlewareASGI, routes=routes, server=server)
 
-class PaymentRequest(BaseModel):
-    trade: str
-    location: str
-    min_rating: float = 4.0
-
-class x402Middleware:
-    """
-    Middleware to handle x402 payments
-    """
-    
-    def __init__(self, price_usd: float = 0.10):
-        self.price = price_usd
-        self.asset = "USDC"
-        self.network = "base"
-        self.receiver = WALLET_ADDRESS
-    
-    def check_payment(self, request_headers: dict) -> tuple[bool, Optional[dict]]:
-        """
-        Check if request includes valid payment
-        Returns: (is_valid, payment_info)
-        """
-        # Check for x402 payment header
-        payment_header = request_headers.get("X-Payment-Signature") or request_headers.get("x-payment-signature")
-        
-        if not payment_header:
-            return False, None
-        
-        # In production, verify with facilitator
-        # For MVP, we accept the header as proof of payment
-        try:
-            payment_info = json.loads(payment_header)
-            return True, payment_info
-        except:
-            return True, {"status": "accepted"}
-    
-    def get_payment_required_response(self) -> dict:
-        """
-        Return 402 Payment Required response
-        """
-        return {
-            "error": "Payment Required",
-            "status": 402,
-            "payment": {
-                "scheme": "exact",
-                "network": self.network,
-                "asset": self.asset,
-                "amount": str(self.price),
-                "receiver": self.receiver,
-                "facilitator": X402_CONFIG["facilitator"],
-                "memo": "ContractorFinder API call"
-            }
-        }
-
-# Initialize FastAPI app
-app = FastAPI(title="ContractorFinder API", version="1.0.0")
-payment_middleware = x402Middleware()
-
-@app.on_event("startup")
-async def startup_event():
-    print(f"🚀 ContractorFinder API starting on port {os.getenv('PORT', 8000)}")
-    print(f"💰 Wallet: {WALLET_ADDRESS[:20]}...")
-    print(f"🤖 OpenAI: {'✅' if os.getenv('OPENAI_API_KEY') else '❌ Not set'}")
-
-# Import agent
-import sys
+# --- Import agent ---
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.agent import agent
 
-@app.middleware("http")
-async def x402_payment_check(request: Request, call_next):
-    """
-    Check x402 payment on every request
-    """
-    # Skip payment check for health endpoints
-    if request.url.path in ["/health", "/", "/docs", "/openapi.json"]:
-        return await call_next(request)
-    
-    # Check payment
-    is_paid, payment_info = payment_middleware.check_payment(dict(request.headers))
-    
-    if not is_paid:
-        return JSONResponse(
-            status_code=402,
-            content=payment_middleware.get_payment_required_response()
-        )
-    
-    # Store payment info in request state
-    request.state.payment = payment_info
-    
-    # Payment valid, proceed
-    return await call_next(request)
+
+class FindRequest(BaseModel):
+    service: str
+    location: str
+    min_rating: float = 4.0
+
 
 @app.get("/")
 async def root():
-    """Root endpoint - info only"""
     return {
-        "name": "ContractorFinder API",
-        "version": "1.0.0",
-        "description": "Find licensed contractors with x402 payments",
+        "name": "BookkeeperFinder API",
+        "version": "2.0.0",
         "price": "$0.10 USDC per call",
-        "network": "Base",
+        "network": "Base (eip155:8453)",
+        "wallet": WALLET_ADDRESS,
         "endpoints": {
             "health": "/health",
-            "find": "/find (POST, requires payment)"
-        }
+            "find": "POST /find (requires $0.10 USDC payment)",
+        },
     }
+
 
 @app.get("/health")
 async def health_check():
-    """Health check - no payment required"""
     return {
         "status": "healthy",
-        "agent": "contractor-finder",
-        "version": "1.0.0",
+        "agent": "bookkeeper-finder",
+        "version": "2.0.0",
         "payment_required": True,
-        "price": "0.10 USDC"
+        "price": "0.10 USDC",
+        "network": "eip155:8453",
     }
 
+
 @app.post("/find")
-async def find_contractors_endpoint(request: Request, body: PaymentRequest):
-    """
-    Main endpoint - requires $0.10 payment via x402
-    """
-    result = agent.find_contractors(
-        trade=body.trade,
+async def find_bookkeepers_endpoint(body: FindRequest) -> dict[str, Any]:
+    result = agent.find_bookkeepers(
+        service=body.service,
         location=body.location,
-        min_rating=body.min_rating
+        min_rating=body.min_rating,
     )
-    
-    # Add payment confirmation
     result["payment_status"] = "received"
     result["payment_amount"] = "0.10 USDC"
-    
+    result["payment_network"] = "eip155:8453"
     return result
+
 
 @app.get("/payment-info")
 async def payment_info():
-    """Get payment requirements"""
-    return payment_middleware.get_payment_required_response()["payment"]
+    return {
+        "scheme": "exact",
+        "network": "eip155:8453",
+        "asset": "USDC",
+        "amount": "0.10",
+        "receiver": WALLET_ADDRESS,
+        "facilitator": FACILITATOR_URL,
+    }
+
 
 if __name__ == "__main__":
     import uvicorn
-    import time
-    
-    # Small delay to ensure Railway is ready
-    time.sleep(2)
-    
     port = int(os.getenv("PORT", 8000))
-    print(f"🚀 Starting server on port {port}")
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
+    uvicorn.run(app, host="0.0.0.0", port=port)
