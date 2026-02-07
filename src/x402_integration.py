@@ -1,19 +1,16 @@
 """
-BookkeeperFinder API - x402 v2 with Bazaar Discovery
+BookkeeperFinder API - x402 Payment Integration
+Simple x402 middleware (MVP mode) with Bazaar discovery metadata
 """
 
 import os
 import sys
-from typing import Any
+import json
+from typing import Any, Optional, Tuple
 
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-
-from x402.http import FacilitatorConfig, HTTPFacilitatorClient, PaymentOption
-from x402.http.middleware.fastapi import PaymentMiddlewareASGI
-from x402.http.types import RouteConfig
-from x402.mechanisms.evm.exact import ExactEvmServerScheme
-from x402.server import x402ResourceServer
 
 # --- Config ---
 WALLET_ADDRESS = os.getenv(
@@ -25,73 +22,49 @@ FACILITATOR_URL = os.getenv("X402_FACILITATOR_URL", "https://x402.org/facilitato
 # --- FastAPI App ---
 app = FastAPI(title="BookkeeperFinder API", version="2.0.0")
 
-# --- x402 Resource Server ---
-facilitator = HTTPFacilitatorClient(FacilitatorConfig(url=FACILITATOR_URL))
-server = x402ResourceServer(facilitator)
-server.register("eip155:8453", ExactEvmServerScheme())
 
-# --- Routes with Bazaar discovery metadata ---
-routes: dict[str, RouteConfig] = {
-    "POST /find": RouteConfig(
-        accepts=[
-            PaymentOption(
-                scheme="exact",
-                pay_to=WALLET_ADDRESS,
-                price="$0.10",
-                network="eip155:8453",
-            ),
-        ],
-        mime_type="application/json",
-        description="Find certified bookkeepers and CPAs. Verifies CPA licenses (California), QuickBooks certification.",
-        extensions={
-            "bazaar": {
-                "info": {
-                    "input": {
-                        "type": "json",
-                        "example": {
-                            "service": "bookkeeper",
-                            "location": "Los Angeles, CA",
-                            "min_rating": 4.0,
-                        },
-                        "schema": {
-                            "type": "object",
-                            "properties": {
-                                "service": {"type": "string", "description": "Service type (bookkeeper, CPA, tax preparer)"},
-                                "location": {"type": "string", "description": "City and state"},
-                                "min_rating": {"type": "number", "description": "Minimum rating 1-5", "default": 4.0},
-                            },
-                            "required": ["service", "location"],
-                        },
-                    },
-                    "output": {
-                        "type": "json",
-                        "example": {
-                            "query": {"service": "bookkeeper", "location": "Los Angeles, CA", "min_rating": 4.0},
-                            "results": [
-                                {
-                                    "name": "Elite Accounting",
-                                    "license_number": "CPA-45678",
-                                    "license_status": "ACTIVE",
-                                    "phone": "555-1234",
-                                    "rating": 4.8,
-                                    "review_count": 87,
-                                    "verified": True,
-                                    "quickbooks_certified": True,
-                                    "services": ["Bookkeeping", "Tax Preparation", "QuickBooks Certified"],
-                                }
-                            ],
-                            "count": 1,
-                            "price_charged": 0.10,
-                            "data_sources": ["Local Database", "CBA (CA)", "QuickBooks"],
-                        },
-                    },
-                },
+# --- Simple x402 Middleware ---
+class x402Middleware:
+    def __init__(self, price_usd: float = 0.10):
+        self.price = price_usd
+        self.asset = "USDC"
+        self.network = "base"
+        self.receiver = WALLET_ADDRESS
+        self.facilitator = FACILITATOR_URL
+
+    def check_payment(self, request_headers: dict) -> Tuple[bool, Optional[dict], str]:
+        payment_header = (
+            request_headers.get("x-payment-signature")
+            or request_headers.get("X-Payment-Signature")
+        )
+        if not payment_header:
+            return False, None, "Missing X-Payment-Signature header"
+        try:
+            payment_info = json.loads(payment_header)
+        except json.JSONDecodeError:
+            return False, None, "Invalid payment signature format"
+        if not payment_info.get("tx_hash") and not payment_info.get("signature"):
+            return False, None, "Payment missing transaction hash or signature"
+        return True, payment_info, "Payment accepted (MVP mode)"
+
+    def get_payment_required_response(self) -> dict:
+        return {
+            "error": "Payment Required",
+            "status": 402,
+            "payment": {
+                "scheme": "exact",
+                "network": self.network,
+                "asset": self.asset,
+                "amount": str(self.price),
+                "receiver": self.receiver,
+                "facilitator": self.facilitator,
+                "memo": "BookkeeperFinder API call",
             },
-        },
-    ),
-}
+        }
 
-app.add_middleware(PaymentMiddlewareASGI, routes=routes, server=server)
+
+payment_middleware = x402Middleware()
+
 
 # --- Import agent ---
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -99,9 +72,20 @@ from src.agent import agent
 
 
 class FindRequest(BaseModel):
-    service: str
-    location: str
+    service: str = "bookkeeper"
+    location: str = "Miami, FL"
     min_rating: float = 4.0
+
+
+@app.middleware("http")
+async def x402_payment_check(request: Request, call_next):
+    if request.url.path in ["/health", "/", "/docs", "/openapi.json", "/payment-info"]:
+        return await call_next(request)
+    is_paid, payment_info, error_msg = payment_middleware.check_payment(dict(request.headers))
+    if not is_paid:
+        return JSONResponse(status_code=402, content=payment_middleware.get_payment_required_response())
+    request.state.payment = payment_info
+    return await call_next(request)
 
 
 @app.get("/")
@@ -146,14 +130,7 @@ async def find_bookkeepers_endpoint(body: FindRequest) -> dict[str, Any]:
 
 @app.get("/payment-info")
 async def payment_info():
-    return {
-        "scheme": "exact",
-        "network": "eip155:8453",
-        "asset": "USDC",
-        "amount": "0.10",
-        "receiver": WALLET_ADDRESS,
-        "facilitator": FACILITATOR_URL,
-    }
+    return payment_middleware.get_payment_required_response()["payment"]
 
 
 if __name__ == "__main__":
