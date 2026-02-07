@@ -13,7 +13,7 @@ services:
       - key: APIFY_API_TOKEN
         sync: false
       - key: BASE_WALLET_ADDRESS
-        value: 0x708AF34B155834B1e45B4B4b5933486a4e173C4e
+        value: 0xb3e17988e6eE4D31e6D07decf363f736461d9e08
       - key: AGENT_NAME
         value: bookkeeper-finder
       - key: AGENT_VERSION

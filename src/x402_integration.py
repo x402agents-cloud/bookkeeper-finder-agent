@@ -18,7 +18,7 @@ from x402.server import x402ResourceServer
 # --- Config ---
 WALLET_ADDRESS = os.getenv(
     "BASE_WALLET_ADDRESS",
-    "0x708AF34B155834B1e45B4B4b5933486a4e173C4e",
+    "0xb3e17988e6eE4D31e6D07decf363f736461d9e08",
 )
 FACILITATOR_URL = os.getenv("X402_FACILITATOR_URL", "https://x402.org/facilitator")
 
