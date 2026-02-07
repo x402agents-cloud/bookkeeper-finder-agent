@@ -18,7 +18,7 @@ X402_CONFIG = {
     "facilitator": "https://facilitator.coinbase.com"
 }
 
-WALLET_ADDRESS = os.getenv("BASE_WALLET_ADDRESS", "0xb3e17988e6eE4D31e6D07decf363f736461d9e08")
+WALLET_ADDRESS = os.getenv("BASE_WALLET_ADDRESS", "0x708AF34B155834B1e45B4B4b5933486a4e173C4e")
 
 class PaymentRequest(BaseModel):
     trade: str
@@ -162,5 +162,11 @@ async def payment_info():
 
 if __name__ == "__main__":
     import uvicorn
+    import time
+    
+    # Small delay to ensure Railway is ready
+    time.sleep(2)
+    
     port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    print(f"🚀 Starting server on port {port}")
+    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info")
