@@ -1,13 +1,13 @@
 #!/bin/bash
-# Deploy ContractorFinder Agent to Production
+# Deploy BookkeeperFinder Agent to Production
 
 set -e
 
-echo "🚀 Deploying ContractorFinder Agent..."
+echo "🚀 Deploying BookkeeperFinder Agent..."
 echo "========================================"
 
 # Configuration
-AGENT_NAME="contractor-finder"
+AGENT_NAME="bookkeeper-finder"
 
 # Step 1: Verify environment
 echo ""
@@ -23,7 +23,7 @@ echo "✅ Environment OK"
 # Step 2: Test locally
 echo ""
 echo "🧪 Step 2: Testing agent locally..."
-python3 -c "from src.agent import agent; result = agent.find_contractors('plumber', 'Austin, TX'); print('✅ Agent test passed')"
+python3 -c "from src.agent import agent; result = agent.find_bookkeepers('Austin, TX'); print('✅ Agent test passed')"
 
 # Step 3: Check if Railway CLI is installed
 echo ""
