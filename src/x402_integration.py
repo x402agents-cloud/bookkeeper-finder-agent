@@ -30,7 +30,7 @@ PAYMENT_REQUIRED_BODY = {
     "x402Version": 2,
     "error": "Payment required",
     "resource": {
-        "url": "https://bookkeeper-finder-production-f4d1.up.railway.app/api/search",
+        "url": "https://bookkeeper-finder.onrender.com/api/search",
         "description": "Find verified bookkeepers and accountants",
         "mimeType": "application/json",
     },
