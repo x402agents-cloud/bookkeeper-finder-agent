@@ -1,0 +1,4 @@
+# Performance Fix - Deployment Refresh
+# Triggered: Saturday, February 7, 2026 - 9:45 PM
+# Reason: BookkeeperFinder returning 404 on all endpoints
+# Action: Force Render to redeploy with fresh build
